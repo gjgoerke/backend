@@ -19,9 +19,10 @@ var theorySchema = new Schema({
     clonedForm        : { type: Schema.Types.ObjectId, ref: 'Theory' },
     lastConsistency   : Boolean,
     lastConsistencyDate: Date,
-    writeProtected    : Boolean
+    writeProtected    : Boolean,
+    queries           : [Object] // This needs to be fixed, I spent a long time trying to figure out how to populate the array in user.exports
+                                // while doing it the correct way, with no success.
 });
-
 
 theorySchema.methods.getFormalization = function() {
   return this.formalization.concat(this.autoFormalization)

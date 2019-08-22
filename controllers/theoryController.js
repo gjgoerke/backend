@@ -1,5 +1,6 @@
 var Theory = require('../models/theory');
 var User= require('../models/user');
+var Query = require('../models/query')
 var logger = require('../config/winston');
 const { body,validationResult } = require('express-validator/check');
 const { sanitizeBody } = require('express-validator/filter');
@@ -23,6 +24,7 @@ exports.create = [
         var autoForm = Theory.computeAutomaticFormalization(req.body.content)
         //autoForm = autoForm.concat(Theory.computeViolations(autoForm))
         var autoVoc = Theory.computeAutomaticVocabulary(autoForm.map(x => x.json))
+
         Theory.create({
           _id: req.body._id,
           name: req.body.name,
@@ -35,7 +37,8 @@ exports.create = [
           formalization: req.body.formalization,
           creator: req.body.creator,
           autoFormalization: autoForm,
-          autoVocabulary: autoVoc
+          autoVocabulary: autoVoc,
+          queries: []
         }).then(theory => {
           User.findById(req.user._id, function(err, user) {
             user.theories.push(theory._id);
@@ -66,7 +69,7 @@ exports.get = function(req, res, next) {
 };
 
 exports.getOne = function(req, res, next) {
-  Theory.findById(req.params.theoryId, ['_id','name','lastUpdate','description','formalization','autoFormalization', 'content', 'comment', 'vocabulary', 'autoVocabulary'], function (err, theory) {
+  Theory.findById(req.params.theoryId, ['_id','name','lastUpdate','description','formalization','autoFormalization', 'content', 'comment', 'vocabulary', 'autoVocabulary','queries'], function (err, theory) {
     res.json({data: theory})
   });
 };

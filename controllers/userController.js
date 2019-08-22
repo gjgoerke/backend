@@ -6,6 +6,7 @@ const { body,validationResult } = require('express-validator/check');
 const { sanitizeBody } = require('express-validator/filter');
 
 var User = require('../models/user');
+var Query = require('../models/query')
 
 exports.newuser =
   function(req, res, next) {
@@ -85,11 +86,13 @@ exports.logout = function(req, res, next) {
 
 exports.user = function(req, res, next) {
   User.findById(req.user, ['_id', 'name', 'email'])
-    .populate('theories', ['_id', 'lastUpdate', 'name', 'description'])
+    .populate('theories', ['_id', 'lastUpdate', 'name', 'description', 'queries'])
     .populate('queries', ['_id', 'lastUpdate', 'name', 'description', 'theory'])
     .exec(function(err, user) {
     res.status(200).json({ data: user })
   })
 };
+
+
 
 // IMPORTANT!! If adding update for users, make sure to take into account write protection!

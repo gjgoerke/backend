@@ -43,6 +43,15 @@ exports.create = [
         }).then(query => {
           User.findById(req.user._id, function(err, user) {
             user.queries.push(query._id);
+
+            //{ _id : {$eq: query.theory }}
+            var parentTheory = Theory.find();
+            console.log('parentTheory ')
+            Theory.find().exec(function(err,parTheories) {
+              if(err) console.log(err);
+              console.log(parTheories);
+            });
+
             user.save(err => {
               if (err) {
                 logger.error(`Query of user ${JSON.stringify(req.user)} cannot be created: ${err}`);
@@ -94,7 +103,35 @@ exports.update = function(req, res, next) {
       }
       body.lastUpdate = new Date();
       Query.updateOne({ '_id': req.params.queryId, user: req.user._id }, { $set: body}, function (err, result) {
+
         if (!err && (result.nModified > 0)) {
+          Query.findById(req.params.queryId, ['name', 'theory'], function (err, query) {
+            if(err) console.log(err);
+
+            // Push reference to this query in theory.queries array, convenient for a parent-child relationship of theories & queries.
+            try{
+              console.log('****QUERYNAME: ' + query.name);
+              Theory
+                .findById(query.theory,['name','queries'])
+                .exec(function(err,parTheory) {
+                  if(err) console.log(err);
+                  if(!parTheory.queries.includes(query._id)) { // Test that query needs to be added.
+                    parTheory.queries.push(query);
+                    parTheory.save(function(error, parTheory) {
+                      console.log('***parTheoryBefore*** '+parTheory);
+                       Theory.populate(parTheory, {path: 'queries', select: 'name', model: Query}, function(error, parTheory){});
+                      // parTheory.populate('queries', function(error, parTheory) {
+                      //   console.log('***parTheoryAfter*** '+parTheory);
+                      // });
+                    });
+                  }
+                });
+            } catch (error) {
+              logger.error(`Query ${req.params.queryId} of user ${JSON.stringify(req.user)} cannot be updated: ${error}`);
+              res.status(400).json(error);
+            }
+
+          });
           logger.info(`Query ${req.params.queryId} of user ${JSON.stringify(req.user)} updated`);
           res.status(200).json({"message": 'Query updated'});
         } else if ((result && result.nModified < 1) || (err && err.name == 'CastError')) {
